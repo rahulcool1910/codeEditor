@@ -5,14 +5,14 @@ interface RespositaryState {
     data?: RootObject;
     message?: string
 }
-interface initialState {
+export interface initialState {
     type: stateType.start_search;
 }
-interface errorState {
+export interface errorState {
     type: stateType.search_error;
     message: string;
 }
-interface successState {
+export interface successState {
     type: stateType.search_success;
     payload: RootObject;
 }

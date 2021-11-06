@@ -1,9 +1,10 @@
 import { Dispatch } from "react"
 import { stateType } from "../actionTypes"
+import { errorState, initialState, successState } from "../reducers/RepositoryReducers"
 
 
 const ActionCreator = (text: string) => {
-    return ((dispatch: Dispatch<any>) => {
+    return ((dispatch: Dispatch< | initialState | successState | errorState>) => {
         dispatch({ type: stateType.start_search })
         try {
             fetch(`https://registry.npmjs.org/-/v1/search?text=${text}`)
@@ -16,7 +17,7 @@ const ActionCreator = (text: string) => {
                     }
                 )
         } catch (error) {
-            dispatch({ type: stateType.search_error })
+            dispatch({ type: stateType.search_error,message: "not found"})
         }
     })
 }
