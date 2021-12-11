@@ -1,20 +1,19 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import '../assets/syntax.css';
-import * as esBuild from 'esbuild-wasm'
+import * as esBuild from 'esbuild-wasm';
 import { unpkgPathPlugin } from '../plugin/esBuildPlugin';
-import localforage from 'localforage'
-import { v4 } from 'uuid'
+import localforage from 'localforage';
+import { v4 } from 'uuid';
 import CodeEditor from './codeEditor';
 import Resizable from './resizable';
 
-
 localforage.createInstance({
-   name: 'fileCache'
-})
+  name: 'fileCache',
+});
 function Preview() {
-   const ref = useRef<HTMLIFrameElement | null>(null);
-   const esbuildRef = useRef<esBuild.Service | null>(null);
-   const initialValue = `
+  const ref = useRef<HTMLIFrameElement | null>(null);
+  const esbuildRef = useRef<esBuild.Service | null>(null);
+  const initialValue = `
 import React from 'react'
 import ReactDOM from 'react-dom'
 const App=()=>{
@@ -26,78 +25,61 @@ ReactDOM.render(
     <App/>,
     document.querySelector("#root")
 )
+`;
 
-`
-   const startService = async () => {
-      esbuildRef.current = await esBuild.startService({
-         worker: true,
-         wasmURL: "https://unpkg.com/esbuild-wasm@0.8.27/esbuild.wasm"
+
+  const startService = async () => {
+    esbuildRef.current = await esBuild.startService({
+      worker: true,
+      wasmURL: 'https://unpkg.com/esbuild-wasm@0.8.27/esbuild.wasm',
+    });
+    console.time();
+  };
+  useEffect(() => {
+    const initializeApp = async () => {
+      startService();
+    };
+
+    initializeApp();
+
+    setTimeout(() => {
+      compiler(initialValue);
+    }, 3000);
+  }, []);
+
+  const compiler = async (event: string = '') => {
+    if (!esbuildRef.current) {
+      return;
+    }
+    const text = event;
+    try {
+      // const result=await esbuildRef.current.transform(text,{
+      //    loader:"jsx",
+      //    target:"es2015"
+      // })
+      if (ref.current) ref.current.srcdoc = html;
+
+      const result = await esbuildRef.current.build({
+        entryPoints: ['index.js'],
+        bundle: true,
+        write: false,
+        plugins: [unpkgPathPlugin(text)],
+        define: {
+          'process.env.NODE_ENV': '"production"',
+          Global: 'window',
+        },
       });
-      console.time()
 
-
-   }
-   useEffect(() => {
-
-
-
-      const initializeApp = async () => {
-         startService();
+      // setData(result.outputFiles[0].text);
+      if (ref.current?.contentWindow) {
+        ref.current.contentWindow.postMessage(result.outputFiles[0].text, '*');
       }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-
-      initializeApp();
-
-
-      setTimeout(() => {
-         compiler(initialValue)
-
-      }, 3000)
-   }, [])
-
-
-
-
-   const compiler = async (event: string = "") => {
-      if (!esbuildRef.current) {
-         return
-      }
-      const text = event;
-      try {
-         // const result=await esbuildRef.current.transform(text,{
-         //    loader:"jsx",
-         //    target:"es2015"
-         // })
-         if (ref.current) ref.current.srcdoc = html
-
-         const result = await esbuildRef.current.build({
-            entryPoints: ['index.js'],
-            bundle: true,
-            write: false,
-            plugins: [unpkgPathPlugin(text)],
-            define: {
-               'process.env.NODE_ENV': '"production"',
-               Global: 'window'
-            }
-         });
-
-
-         // setData(result.outputFiles[0].text);
-         if (ref.current?.contentWindow) {
-            ref.current.contentWindow.postMessage(result.outputFiles[0].text, '*')
-         }
-     
-      } catch (error) {
-         console.log(error);
-         
-
-      }
-   }
-
-
-
-
-   const html = `
+  const html = `
    <!DOCTYPE html>
    <html lang="en">
    <head>
@@ -124,20 +106,28 @@ ReactDOM.render(
    },false)
    </script>
    </html>
-   `
+   `;
 
-
-   return (
-      <Resizable direction="Horizontal">
-
+  return (
+    <Resizable direction="Vertical">
       <div className="editor-wrapper">
-         <CodeEditor compiler={compiler} initialValue={initialValue} />
-         <iframe title={v4()} ref={ref} srcDoc={html} width="100%" height="100%" sandbox='allow-scripts' className="border-4 border-white border-opacity-100 bg-black "></iframe>
+        <Resizable direction="Horizontal">
+          <CodeEditor compiler={compiler} initialValue={initialValue} />
+        </Resizable>
+        <div className="preview-wrapper">
+          <iframe
+            title={v4()}
+            ref={ref}
+            srcDoc={html}
+            width="100%"
+            height="100%"
+            sandbox="allow-scripts"
+            className="border-4 border-white border-opacity-100 bg-black "
+          ></iframe>
+        </div>
       </div>
-      </Resizable>
-   )
+    </Resizable>
+  );
 }
 
-
-
-export default Preview
+export default Preview;
