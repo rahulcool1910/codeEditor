@@ -2,17 +2,16 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.scss';
 import App from './App';
-import './assets/main.css' 
-import './assets/tailwind.css' 
+import './assets/main.css';
+import './assets/tailwind.css';
 import reportWebVitals from './reportWebVitals';
 import { Provider } from 'react-redux';
-import store from './store';
-
+import { store } from './store';
 
 ReactDOM.render(
   <Provider store={store}>
-  <React.StrictMode>
-    <App />
+    <React.StrictMode>
+      <App />
     </React.StrictMode>
   </Provider>,
   document.getElementById('root')

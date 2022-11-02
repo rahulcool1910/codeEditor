@@ -6,34 +6,24 @@ import localforage from 'localforage';
 import { v4 } from 'uuid';
 import CodeEditor from './codeEditor';
 import Resizable from './resizable';
+import { initialValue } from '../constants/initialCode';
+import { Cell } from '../store/cell';
 
 localforage.createInstance({
   name: 'fileCache',
 });
-function Preview() {
+
+const Preview: React.FC<Cell> = ({ id, content, type }) => {
+  console.log('🚀 ~ file: preview.tsx ~ line 17 ~ content', content);
   const ref = useRef<HTMLIFrameElement | null>(null);
   const esbuildRef = useRef<esBuild.Service | null>(null);
-  const initialValue = `
-import React from 'react'
-import ReactDOM from 'react-dom'
-const App=()=>{
-    return <div>
-        <h1>hello world</h1>
-    </div>
-}
-ReactDOM.render(
-    <App/>,
-    document.querySelector("#root")
-)
-`;
-
 
   const startService = async () => {
+    console.log('start service called');
     esbuildRef.current = await esBuild.startService({
       worker: true,
       wasmURL: 'https://unpkg.com/esbuild-wasm@0.8.27/esbuild.wasm',
     });
-    console.time();
   };
   useEffect(() => {
     const initializeApp = async () => {
@@ -43,9 +33,12 @@ ReactDOM.render(
     initializeApp();
 
     setTimeout(() => {
-      compiler(initialValue);
+      compiler(content);
     }, 3000);
   }, []);
+  useEffect(() => {
+    compiler(content);
+  }, [content]);
 
   const compiler = async (event: string = '') => {
     if (!esbuildRef.current) {
@@ -53,10 +46,6 @@ ReactDOM.render(
     }
     const text = event;
     try {
-      // const result=await esbuildRef.current.transform(text,{
-      //    loader:"jsx",
-      //    target:"es2015"
-      // })
       if (ref.current) ref.current.srcdoc = html;
 
       const result = await esbuildRef.current.build({
@@ -99,6 +88,7 @@ ReactDOM.render(
    <script>
    window.addEventListener("message",(event)=>{
       try {
+        console.log(event)
          eval(event.data)
       } catch (error) {
          document.querySelector("#root").innerHTML= '<h1>' +  error + '</h1>'
@@ -112,7 +102,7 @@ ReactDOM.render(
     <Resizable direction="Vertical">
       <div className="editor-wrapper">
         <Resizable direction="Horizontal">
-          <CodeEditor compiler={compiler} initialValue={initialValue} />
+          <CodeEditor id={id} initialValue={content} />
         </Resizable>
         <div className="preview-wrapper">
           <iframe
@@ -128,6 +118,6 @@ ReactDOM.render(
       </div>
     </Resizable>
   );
-}
+};
 
 export default Preview;
